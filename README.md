@@ -86,6 +86,43 @@ localRAG/
 | GET | /api/v1/health | 健康检查 |
 | GET | /api/v1/stats | 系统统计 |
 
+## Claude Code 集成 (MCP)
+
+本项目提供 MCP 服务器，让 Claude Code 可以直接查询你的知识库。
+
+### 快速配置
+
+1. **启动 RAG API 服务**：
+```bash
+poetry run uvicorn rag.api.main:app --host 0.0.0.0 --port 8000
+```
+
+2. **配置 Claude Code MCP**：
+
+编辑 `~/.claude/mcp.json`，添加：
+```json
+{
+  "mcpServers": {
+    "localrag": {
+      "command": "/path/to/localRAG/.venv/bin/python",
+      "args": ["-m", "rag.mcp_server"],
+      "cwd": "/path/to/localRAG"
+    }
+  }
+}
+```
+
+### 可用工具
+
+| 工具 | 功能 |
+|------|------|
+| `rag_query` | 查询知识库，获取基于文档的答案 |
+| `rag_list_documents` | 列出知识库中的所有文档 |
+| `rag_get_stats` | 获取知识库统计信息 |
+| `rag_health_check` | 检查 API 服务健康状态 |
+
+详细配置请参考 [docs/mcp-setup.md](docs/mcp-setup.md)。
+
 ## 许可证
 
 MIT

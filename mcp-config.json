@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "localrag": {
+      "command": "/home/ubuntu/.openclaw/workspace/localRAG/.venv/bin/python",
+      "args": ["-m", "rag.mcp_server"],
+      "cwd": "/home/ubuntu/.openclaw/workspace/localRAG",
+      "env": {
+        "RAG_API_BASE": "http://localhost:8000/api/v1"
+      }
+    }
+  }
+}

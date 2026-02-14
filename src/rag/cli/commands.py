@@ -39,12 +39,12 @@ def ingest(
     type: str = typer.Option(
         "auto",
         "--type", "-t",
-        help="Document type: auto, file, code, web",
+        help="Document type: auto, file, code, web, notion",
     ),
 ) -> None:
     """Import documents into the knowledge base.
 
-    Supports file, code, and web document types.
+    Supports file, code, web, and notion document types.
     Displays loading progress and import results.
     """
     # Select loader based on type
@@ -54,6 +54,9 @@ def ingest(
     elif type == "web":
         from rag.loaders.web_loader import WebLoader
         loader = WebLoader()
+    elif type == "notion":
+        from rag.loaders.notion_loader import NotionLoader
+        loader = NotionLoader()
     elif type == "file" or type == "auto":
         from rag.loaders.file_loader import FileLoader
         loader = FileLoader()
