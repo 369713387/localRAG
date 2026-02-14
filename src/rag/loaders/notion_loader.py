@@ -26,10 +26,18 @@ class NotionLoader(BaseLoader):
         self.max_depth = max_depth
         self.client = Client(auth=self.api_key)
 
+    def _format_uuid(self, id: str) -> str:
+        """格式化 ID 为带连字符的 UUID 格式"""
+        clean = id.replace("-", "")
+        if len(clean) != 32:
+            return id
+        return f"{clean[:8]}-{clean[8:12]}-{clean[12:16]}-{clean[16:20]}-{clean[20:]}"
+
     def _is_database(self, id: str) -> bool:
         """判断是否为数据库"""
+        formatted_id = self._format_uuid(id)
         try:
-            self.client.databases.retrieve(database_id=id)
+            self.client.databases.retrieve(database_id=formatted_id)
             return True
         except Exception:
             return False
@@ -215,10 +223,11 @@ class NotionLoader(BaseLoader):
         """加载数据库中的所有页面"""
         self._loading_database = True
         documents = []
+        formatted_id = self._format_uuid(database_id)
 
         try:
-            # 查询数据库所有页面
-            response = self.client.databases.query(database_id=database_id)
+            # 使用 data_sources.query (Notion API v2024+)
+            response = self._query_database(formatted_id)
 
             for page in response.get("results", []):
                 page_id = page["id"]
@@ -229,9 +238,8 @@ class NotionLoader(BaseLoader):
 
             # 处理分页
             while response.get("has_more"):
-                response = self.client.databases.query(
-                    database_id=database_id,
-                    start_cursor=response.get("next_cursor"),
+                response = self._query_database(
+                    formatted_id, start_cursor=response.get("next_cursor")
                 )
                 for page in response.get("results", []):
                     page_id = page["id"]
@@ -241,9 +249,48 @@ class NotionLoader(BaseLoader):
                         logger.warning(f"加载页面失败 {page_id}: {e}")
 
         finally:
-            delattr(self, '_loading_database')
+            if hasattr(self, '_loading_database'):
+                delattr(self, '_loading_database')
 
         return documents
+
+    def _query_database(self, database_id: str, start_cursor: str | None = None) -> dict:
+        """查询数据库，兼容新旧 API"""
+        try:
+            # 尝试使用 data_sources.query (新 API)
+            params = {"data_source_id": database_id}
+            if start_cursor:
+                params["start_cursor"] = start_cursor
+            return self.client.data_sources.query(**params)
+        except Exception as e:
+            logger.debug(f"data_sources.query 失败: {e}，尝试使用 search")
+            # 回退到 search API
+            return self._search_database_pages(database_id, start_cursor)
+
+    def _search_database_pages(self, database_id: str, start_cursor: str | None = None) -> dict:
+        """使用 search API 获取数据库中的页面"""
+        # 使用 search 搜索属于该数据库的页面
+        results = []
+        has_more = False
+        next_cursor = None
+
+        search_result = self.client.search(
+            query="",
+            filter={"property": "object", "value": "page"},
+            start_cursor=start_cursor,
+            page_size=100,
+        )
+
+        for page in search_result.get("results", []):
+            parent = page.get("parent", {})
+            if parent.get("database_id") == database_id:
+                results.append(page)
+
+        return {
+            "results": results,
+            "has_more": search_result.get("has_more", False),
+            "next_cursor": search_result.get("next_cursor"),
+        }
 
     def _get_all_blocks(self, block_id: str) -> list[dict]:
         """获取所有内容块（含分页）"""
