@@ -2,6 +2,8 @@
 import logging
 import os
 
+from notion_client import Client
+
 from rag.loaders.base import BaseLoader, Document
 
 logger = logging.getLogger(__name__)
@@ -22,6 +24,15 @@ class NotionLoader(BaseLoader):
 
         self.include_children = include_children
         self.max_depth = max_depth
+        self.client = Client(auth=self.api_key)
+
+    def _is_database(self, id: str) -> bool:
+        """判断是否为数据库"""
+        try:
+            self.client.databases.retrieve(database_id=id)
+            return True
+        except Exception:
+            return False
 
     def load(self, source: str) -> list[Document]:
         """加载 Notion 内容"""
