@@ -1,0 +1,46 @@
+[tool.poetry]
+name = "rag-project"
+version = "0.1.0"
+description = "Hybrid RAG system for personal knowledge base"
+authors = ["Yifun <369713387@qq.com>"]
+readme = "README.md"
+packages = [{include = "rag", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+chromadb = "^0.4.22"
+zhipuai = "^2.0"
+fastapi = "^0.109"
+uvicorn = "^0.27"
+pydantic = "^2.5"
+pydantic-settings = "^2.1"
+typer = "^0.9"
+rich = "^13"
+pypdf2 = "^3.0"
+python-docx = "^1.1"
+beautifulsoup4 = "^4.12"
+markdown = "^3.5"
+feedparser = "^6.0"
+tree-sitter = "^0.21"
+python-dotenv = "^1.0"
+httpx = "^0.26"
+tenacity = "^8.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4"
+pytest-cov = "^4.1"
+pytest-asyncio = "^0.23"
+black = "^24.1"
+ruff = "^0.1"
+mypy = "^1.8"
+
+[tool.poetry.scripts]
+rag = "rag.cli.commands:app"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
